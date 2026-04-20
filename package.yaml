@@ -12,8 +12,11 @@ depends:
   sensor_msgs: "system"
   geometry_msgs: "system"
 
+  OpenMP: "system"
   OpenCV: "system"
   OpenGL: "system"
+  glew: "system"
+  glfw3: "system"
   Pangolin: "0.6"
 
 licenses:

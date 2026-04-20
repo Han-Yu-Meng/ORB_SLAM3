@@ -17,6 +17,8 @@ depends:
   OpenGL: "system"
   glew: "system"
   glfw3: "system"
+  boost: "system"
+  
   Pangolin: "0.6"
 
 licenses:

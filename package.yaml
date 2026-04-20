@@ -13,6 +13,7 @@ depends:
   geometry_msgs: "system"
 
   OpenCV: "system"
+  OpenGL: "system"
   Pangolin: "0.6"
 
 licenses:

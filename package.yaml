@@ -1,0 +1,19 @@
+name: "orb_slam3"
+version: "0.1.0"
+description: "ORB-SLAM3 is the first real-time SLAM library able to perform Visual, Visual-Inertial and Multi-Map SLAM with monocular, stereo and RGB-D cameras, using pin-hole and fisheye lens models."
+maintainers:
+  - name: "fins"
+    email: "fins@sjtu.edu.cn"
+depends:
+  Eigen3: "3.4.0"
+  # Sophus: "1.22.4"
+
+  nav_msgs: "system"
+  sensor_msgs: "system"
+  geometry_msgs: "system"
+
+  OpenCV: "system"
+  Pangolin: "0.6"
+
+licenses:
+  - "GPL-3.0"

@@ -2,25 +2,55 @@ name: FINS Plugin CI/CD
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "**" ]
+    branches: ["**"]
 
 jobs:
   build:
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
-    timeout-minutes: 60
-    
+    timeout-minutes: 15
+
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: "20.04", distro: "foxy",   arch: "amd64", image: "ros:foxy-ros-base" }
-          - { os: "20.04", distro: "foxy",   arch: "arm64", image: "ros:foxy-ros-base" }
-          - { os: "22.04", distro: "humble", arch: "amd64", image: "ros:humble-ros-base" }
-          - { os: "22.04", distro: "humble", arch: "arm64", image: "ros:humble-ros-base" }
-          - { os: "24.04", distro: "jazzy",  arch: "amd64", image: "ros:jazzy-ros-base" }
-          - { os: "24.04", distro: "jazzy",  arch: "arm64", image: "ros:jazzy-ros-base" }
+          - {
+              os: "20.04",
+              distro: "foxy",
+              arch: "amd64",
+              image: "ros:foxy-ros-base",
+            }
+          - {
+              os: "20.04",
+              distro: "foxy",
+              arch: "arm64",
+              image: "ros:foxy-ros-base",
+            }
+          - {
+              os: "22.04",
+              distro: "humble",
+              arch: "amd64",
+              image: "ros:humble-ros-base",
+            }
+          - {
+              os: "22.04",
+              distro: "humble",
+              arch: "arm64",
+              image: "ros:humble-ros-base",
+            }
+          - {
+              os: "24.04",
+              distro: "jazzy",
+              arch: "amd64",
+              image: "ros:jazzy-ros-base",
+            }
+          - {
+              os: "24.04",
+              distro: "jazzy",
+              arch: "arm64",
+              image: "ros:jazzy-ros-base",
+            }
 
     container:
       image: ${{ matrix.image }}
@@ -74,14 +104,14 @@ jobs:
               sed -i 's|http://security.ubuntu.com|http://azure.archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
             fi
           fi
-          
+
           rm -f /etc/apt/apt.conf.d/docker-clean || true
           echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/01keep-debs
-          
+
           echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries
           echo 'Acquire::http::Timeout "10";' >> /etc/apt/apt.conf.d/80-retries
           echo 'Acquire::ForceIPv4 "true";' >> /etc/apt/apt.conf.d/80-retries
-          
+
           apt update -o Acquire::ForceIPv4=true --fix-missing
           apt install -y --no-install-recommends curl git sudo jq ninja-build software-properties-common bc wget python3-yaml zip cppcheck
 
@@ -99,12 +129,18 @@ jobs:
           restore-keys: |
             apt-cache-${{ matrix.os }}-${{ matrix.arch }}-
 
+      - name: Get SDK Latest Commit
+        id: sdk-commit
+        run: |
+          SDK_COMMIT=$(git ls-remote https://gitee.com/fins-robotics/FineVision refs/heads/V2\(dev\) | cut -f1)
+          echo "sdk_commit=$SDK_COMMIT" >> $GITHUB_OUTPUT
+
       - name: Cache Fins-SDK
         id: cache-fins-sdk
         uses: actions/cache@v4
         with:
           path: /github/home/FineVision
-          key: fins-sdk-v2-${{ matrix.os }}-${{ matrix.arch }}
+          key: fins-sdk-v2-${{ matrix.os }}-${{ matrix.arch }}-${{ steps.sdk-commit.outputs.sdk_commit }}
 
       - name: Cache Fins Dependencies
         uses: actions/cache@v4
@@ -137,13 +173,13 @@ jobs:
       - name: Solve Dependencies
         run: |
           source /opt/ros/${{ matrix.distro }}/setup.bash
-          
+
           mkdir -p apt-cache
           sudo rm -rf /var/cache/apt/archives
           sudo ln -s $(pwd)/apt-cache /var/cache/apt/archives
-          
+
           sudo fins dep solve ${{ steps.pkg_info.outputs.PACKAGE_NAME }}
-          
+
           pkill finsd || true
           sleep 2
           nohup finsd > /github/home/.fins/logs/finsd_build.log 2>&1 &
@@ -157,7 +193,7 @@ jobs:
           mkdir -p /github/home/artifacts
           cd /github/home/.fins/install/
           zip -r /github/home/artifacts/Ubuntu-${{ matrix.os }}-${{ matrix.arch }}.zip . \
-            -x "lib/*" -x "agent/*" -x "libfins_shared*"
+            -x "lib/*" -x "agent/*" -x "libfins_*" -x "include/*"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -208,4 +244,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          

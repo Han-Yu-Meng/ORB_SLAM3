@@ -85,6 +85,14 @@ jobs:
           else
             echo "No Cppcheck issues found."
           fi
+          
+      - name: Cache APT Archives
+        uses: actions/cache@v4
+        with:
+          path: apt-cache
+          key: apt-cache-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            apt-cache-${{ matrix.os }}-${{ matrix.arch }}-
 
       - name: Install Basic Tools
         run: |
@@ -121,44 +129,18 @@ jobs:
           PKG_NAME=$(python3 -c "import yaml; print(yaml.safe_load(open('package.yaml'))['name'])")
           echo "PACKAGE_NAME=$PKG_NAME" >> $GITHUB_OUTPUT
 
-      - name: Cache APT Archives
-        uses: actions/cache@v4
-        with:
-          path: apt-cache
-          key: apt-cache-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('package.yaml') }}
-          restore-keys: |
-            apt-cache-${{ matrix.os }}-${{ matrix.arch }}-
-
-      - name: Get SDK Latest Commit
-        id: sdk-commit
-        run: |
-          SDK_COMMIT=$(git ls-remote https://gitee.com/fins-robotics/FineVision refs/heads/V2\(dev\) | cut -f1)
-          echo "sdk_commit=$SDK_COMMIT" >> $GITHUB_OUTPUT
-
-      - name: Cache Fins-SDK
-        id: cache-fins-sdk
-        uses: actions/cache@v4
-        with:
-          path: /github/home/FineVision
-          key: fins-sdk-v2-${{ matrix.os }}-${{ matrix.arch }}-${{ steps.sdk-commit.outputs.sdk_commit }}
-
       - name: Cache Fins Dependencies
         uses: actions/cache@v4
         with:
           path: /github/home/.fins/dependencies
           key: fins-deps-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
-            fins-deps-${{ matrix.os }}-${{ matrix.arch }}-
-
-      - name: Install Fins-SDK
-        if: steps.cache-fins-sdk.outputs.cache-hit != 'true'
-        run: |
-          git clone --depth 1 -b "V2(dev)" --recursive --shallow-submodules https://gitee.com/fins-robotics/FineVision /github/home/FineVision
+            fins-deps-${{ matrix.os }}-${{ matrix.arch }}
 
       - name: Install Fins-CLI
         run: |
           for i in {1..5}; do
-            curl -fsSL --connect-timeout 5 --retry 3 https://raw.githubusercontent.com/Han-Yu-Meng/fins-cli/main/install.sh | sudo bash && break || sleep 5
+            curl -fsSL --connect-timeout 5 --retry 3 https://raw.githubusercontent.com/Han-Yu-Meng/FineVision-CLI/main/install.sh | sudo bash && break || sleep 5
           done
           mkdir -p /github/home/.fins
           cp -r /root/.fins/* /github/home/.fins/ || true

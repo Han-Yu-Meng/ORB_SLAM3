@@ -18,7 +18,6 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <fins/utils/time.hpp>
 
 struct ImageData {
   double timestamp_sec;
